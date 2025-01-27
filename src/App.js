@@ -10,12 +10,24 @@ function App() {
   });
 
   const [filter, setFilter] = useState("all"); // all, completed, pending
+  const [filterCategory, setFilterCategory] = useState("Todas");
   const [successMessage, setSuccessMessage] = useState("");
   const [clearMessage, setClearMessage] = useState("");
 
-  const addTask = (task) => {
-    const newTasks = [...tasks, { id: Date.now(), text: task, completed: false }];
-    setTasks(newTasks);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode); // Alterna entre claro e escuro
+  };
+
+  const addTask = (text, category) => {
+    const newTask = {
+      id: Date.now(),
+      text,
+      category,
+      completed: false,
+    };
+    setTasks([...tasks, newTask]);
 
     // Exibir mensagem de sucesso
     setSuccessMessage("Tarefa adicionada com sucesso!");
@@ -23,15 +35,13 @@ function App() {
   };
 
   const toggleTask = (id) => {
-    const updatedTasks = tasks.map((task) =>
+    setTasks(tasks.map((task) =>
       task.id === id ? { ...task, completed: !task.completed } : task
-    );
-    setTasks(updatedTasks);
+    ));
   };
 
   const removeTask = (id) => {
-    const updatedTasks = tasks.filter((task) => task.id !== id);
-    setTasks(updatedTasks);
+    setTasks(tasks.filter((task) => task.id !== id));
   };
 
   const clearAllTasks = () => {
@@ -43,11 +53,10 @@ function App() {
     setTimeout(() => setClearMessage(""), 3000); // Ocultar mensagem após 3 segundos
   };
 
+
   const filteredTasks = tasks.filter((task) => {
-    if (filter === "all") return true;
-    if (filter === "completed") return task.completed;
-    if (filter === "pending") return !task.completed;
-    return true;
+    if (filterCategory === "Todas") return true;
+    return task.category === filterCategory;
   });
 
   useEffect(() => {
@@ -56,37 +65,29 @@ function App() {
 
   return (
     <div>
-      <h1>Gerenciador de Tarefas</h1>
-      <TaskInput onAddTask={addTask} />
-      <div>
-        {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
-        {clearMessage && <p style={{ color: "red" }}>{clearMessage}</p>}
-      </div>
-      <div>
-        <button
-          className={`filter ${filter === "all" ? "active" : ""}`}
-          onClick={() => setFilter("all")}
-        >
-          <i className="fas fa-list"></i> Todas
-        </button>
-        <button
-          className={`filter ${filter === "pending" ? "active" : ""}`}
-          onClick={() => setFilter("pending")}
-        >
-          <i className="fas fa-clock"></i> Pendentes
-        </button>
-        <button
-          className={`filter ${filter === "completed" ? "active" : ""}`}
-          onClick={() => setFilter("completed")}
-        >
-          <i className="fas fa-check"></i> Concluídas
-        </button>
-        <button className="clear-all" onClick={clearAllTasks}>
-          Limpar Todas as Tarefas
+      <div className={isDarkMode ? "dark-theme" : "light-theme"}>
+        <button className="theme-toggle" onClick={toggleTheme}>
+          {isDarkMode ? "🌞 Claro" : "🌙 Escuro"}
         </button>
 
+        <h1>Gerenciador de Tarefas</h1>
+        <TaskInput onAddTask={addTask} />
+        <div>
+          <button onClick={() => setFilterCategory("Todas")}>Todas</button>
+          {[...new Set(tasks.map((task) => task.category))].map((category, index) => (
+            <button key={index} onClick={() => setFilterCategory(category)}>
+              {category}
+            </button>
+          ))}
+          <button onClick={clearAllTasks}>Limpar Todas as Tarefas
+          </button>
+        </div>
+        <TaskList
+          tasks={filteredTasks}
+          onToggleTask={toggleTask}
+          onRemoveTask={removeTask}
+        />
       </div>
-      <TaskList tasks={filteredTasks} onToggleTask={toggleTask} onRemoveTask={removeTask} />
     </div>
   );
 }

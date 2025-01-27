@@ -1,37 +1,23 @@
-import React, { useRef } from "react";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
-import "./TaskList.css";
+import React from "react";
 
 const TaskList = ({ tasks, onToggleTask, onRemoveTask }) => {
-  const nodeRefs = useRef({});
-
   return (
-    <TransitionGroup>
-      {tasks.map((task) => {
-        if (!nodeRefs.current[task.id]) {
-          nodeRefs.current[task.id] = React.createRef();
-        }
-
-        return (
-          <CSSTransition
-            key={task.id}
-            timeout={300}
-            classNames="task"
-            nodeRef={nodeRefs.current[task.id]}
+    <ul>
+      {tasks.map((task) => (
+        <li key={task.id}>
+          <span
+            onClick={() => onToggleTask(task.id)}
+            style={{ textDecoration: task.completed ? "line-through" : "none" }}
           >
-            <div
-              ref={nodeRefs.current[task.id]}
-              className={`task ${task.completed ? "completed" : ""}`}
-            >
-              <span onClick={() => onToggleTask(task.id)}>{task.text}</span>
-              <button onClick={() => onRemoveTask(task.id)}>
-                <i className="fas fa-trash"></i> Remover
-              </button>
-            </div>
-          </CSSTransition>
-        );
-      })}
-    </TransitionGroup>
+            {task.text}
+          </span>
+          <span style={{ marginLeft: "10px", fontStyle: "italic", color: "gray" }}>
+            [{task.category}]
+          </span>
+          <button onClick={() => onRemoveTask(task.id)}>Remover</button>
+        </li>
+      ))}
+    </ul>
   );
 };
 

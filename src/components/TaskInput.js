@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 
 function TaskInput({ onAddTask }) {
-  const [input, setInput] = useState("");
+  const [taskText, setTaskText] = useState("");
+  const [category, setCategory] = useState("");
 
-  const handleAdd = () => {
-    if (input.trim()) {
-      onAddTask(input);
-      setInput("");
+  const handleAddTask = () => {
+    if (taskText.trim()) {
+      onAddTask(taskText, category || "Sem Categoria");
+      setTaskText("");
+      setCategory(""); // Limpar campo de categoria após adicionar
     }
   };
 
@@ -14,11 +16,17 @@ function TaskInput({ onAddTask }) {
     <div>
       <input
         type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Nova tarefa..."
+        value={taskText}
+        onChange={(e) => setTaskText(e.target.value)}
+        placeholder="Digite a tarefa..."
       />
-      <button onClick={handleAdd}>Adicionar</button>
+      <input
+        type="text"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        placeholder="Categoria (opcional)"
+      />
+      <button onClick={handleAddTask}>Adicionar</button>
     </div>
   );
 }
