@@ -1,17 +1,19 @@
 # Gerenciador de Tarefas
 
-Este projeto é um aplicativo simples de gerenciamento de tarefas desenvolvido em React. Ele permite que os usuários adicionem, concluam e excluam tarefas, além de alternar entre os modos claro e escuro.
+Este projeto é um aplicativo avançado de gerenciamento de tarefas com suporte a múltiplos usuários, autenticação e persistência de dados no Firebase.
 
 ## Funcionalidades
-- [x] Adicionar novas tarefas.
-- [x] Marcar tarefas como concluídas.
-- [x] Excluir tarefas concluídas.
-- [x] Filtros: Todas, Pendentes, Concluídas.
-- [x] Alternador de tema (claro e escuro).
-- [x] Salvar tarefas no Local Storage para persistência.
+- [x] Autenticação de usuários (login e registro) com Firebase Authentication.
+- [x] Adicionar, marcar como concluída e remover tarefas.
+- [x] Filtros por categorias: Todas, Pendentes, Concluídas.
+- [x] Suporte a múltiplos usuários com tarefas separadas.
+- [x] Alternador de tema (claro e escuro) com persistência no Local Storage.
+- [x] Persistência das tarefas no Firestore (Firebase).
 
 ## Tecnologias Usadas
 - **React**: Biblioteca principal para o desenvolvimento da interface.
+- **Firebase Authentication**: Gerenciamento de usuários e autenticação segura.
+- **Firestore Database**: Banco de dados NoSQL para persistência das tarefas.
 - **CSS**: Estilização personalizada.
 
 ## Instalação
@@ -29,16 +31,51 @@ Siga os passos abaixo para rodar o projeto localmente:
    npm install
    ```
 
-3. Inicie o servidor de desenvolvimento:
+3. Configure o Firebase:
+   - Crie um projeto no [Firebase Console](https://console.firebase.google.com/).
+   - Ative **Authentication** com o método **Email/Password**.
+   - Configure o **Firestore Database** com as seguintes regras:
+     ```javascript
+     rules_version = '2';
+     service cloud.firestore {
+       match /databases/{database}/documents {
+         match /users/{userId}/tasks/{taskId} {
+           allow read, write: if request.auth != null && request.auth.uid == userId;
+         }
+       }
+     }
+     ```
+   - No Firebase Console, copie as configurações do SDK e substitua os valores no arquivo `firebaseConfig.js`:
+     ```javascript
+     import { initializeApp } from "firebase/app";
+     import { getAuth } from "firebase/auth";
+     import { getFirestore } from "firebase/firestore";
+
+     const firebaseConfig = {
+       apiKey: "SUA_API_KEY",
+       authDomain: "SEU_AUTH_DOMAIN",
+       projectId: "SEU_PROJECT_ID",
+       storageBucket: "SEU_STORAGE_BUCKET",
+       messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+       appId: "SEU_APP_ID",
+     };
+
+     const app = initializeApp(firebaseConfig);
+     export const auth = getAuth(app);
+     export const db = getFirestore(app);
+     ```
+
+4. Inicie o servidor de desenvolvimento:
    ```bash
    npm start
    ```
 
 ## Como Usar
-1. Abra `http://localhost:3000` no navegador.
-2. Adicione tarefas digitando no campo e clicando no botão "Adicionar".
-3. Use os botões de filtro (Todas, Pendentes, Concluídas) para visualizar as tarefas conforme o estado.
-4. Clique no botão "Limpar Todas as Tarefas" para excluir todas as tarefas.
+1. Faça login ou registre-se com um email e senha.
+2. Adicione tarefas preenchendo o campo de texto e clicando em "Adicionar".
+3. Use os botões de filtro (Todas, Pendentes, Concluídas) para organizar as tarefas.
+4. Clique no botão "Limpar Todas as Tarefas" para excluir todas as tarefas do usuário atual.
+5. Alterne entre o tema claro e escuro usando o botão no topo da página.
 
 ## Estrutura do Projeto
 ```
@@ -47,8 +84,9 @@ task-manager/
 │   ├── components/
 │   │   ├── TaskInput.js          # Campo de entrada para adicionar tarefas
 │   │   ├── TaskList.js           # Lista de tarefas
-│   │   ├── TaskItem.js           # Componente de tarefa individual
+│   │   ├── Auth.js               # Componente de autenticação
 │   ├── App.js                    # Componente principal
+│   ├── firebaseConfig.js         # Configurações do Firebase
 │   ├── index.js                  # Ponto de entrada da aplicação
 │   ├── App.css                   # Estilos globais
 ├── public/
@@ -56,13 +94,10 @@ task-manager/
 └── README.md                     # Documentação do projeto
 ```
 
-## Salvar Tarefas no Local Storage
-Este projeto usa o Local Storage para persistir as tarefas entre recarregamentos da página. Quando uma tarefa é adicionada, removida ou concluída, o estado atualizado é salvo automaticamente no navegador.
-
 ## Melhorias Futuras
-- Adicionar suporte a múltiplos usuários.
-- Criar categorias personalizadas para tarefas.
-- Integrar com uma API backend para sincronizar tarefas entre dispositivos.
+- Adicionar notificações para lembrar tarefas pendentes.
+- Suporte para anexar arquivos às tarefas.
+- Relatórios gráficos para acompanhar a produtividade.
 
 ## Contribuição
 1. Faça um fork do repositório.
@@ -76,5 +111,3 @@ Este projeto usa o Local Storage para persistir as tarefas entre recarregamentos
 Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais informações.
 
 ---
-
-
