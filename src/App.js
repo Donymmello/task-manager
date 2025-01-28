@@ -1,93 +1,97 @@
 import React, { useState, useEffect } from "react";
+import { auth, db } from "./firebaseConfig";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import Auth from "./Auth";
 import TaskInput from "./components/TaskInput";
 import TaskList from "./components/TaskList";
 import './App.css';
 
 function App() {
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    return savedTasks ? JSON.parse(savedTasks) : [];
+  const [user, setUser] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [filterCategory, setFilterCategory] = useState("Todas");
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Recupera o tema do Local Storage ao carregar
+    const savedTheme = localStorage.getItem("isDarkMode");
+    return savedTheme === "true";
   });
 
-  const [filter, setFilter] = useState("all"); // all, completed, pending
-  const [filterCategory, setFilterCategory] = useState("Todas");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [clearMessage, setClearMessage] = useState("");
-
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode); // Alterna entre claro e escuro
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem("isDarkMode", newTheme); // Salva a preferência no Local Storage
   };
 
-  const addTask = (text, category) => {
-    const newTask = {
-      id: Date.now(),
-      text,
-      category,
-      completed: false,
-    };
-    setTasks([...tasks, newTask]);
-
-    // Exibir mensagem de sucesso
-    setSuccessMessage("Tarefa adicionada com sucesso!");
-    setTimeout(() => setSuccessMessage(""), 3000); // Ocultar mensagem após 3 segundos
+  // Buscar tarefas do Firestore
+  const fetchTasks = async () => {
+    if (!user) return; // Verificar se o usuário está autenticado
+    const querySnapshot = await getDocs(collection(db, `users/${user.uid}/tasks`));
+    const userTasks = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setTasks(userTasks);
   };
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  // Adicionar tarefa no Firestore
+  const addTask = async (text, category) => {
+    if (!user) return;
+    const newTask = { text, category: category || "Sem Categoria", completed: false };
+    const docRef = await addDoc(collection(db, `users/${user.uid}/tasks`), newTask);
+    setTasks([...tasks, { id: docRef.id, ...newTask }]);
   };
 
-  const removeTask = (id) => {
+  // Alternar estado da tarefa (completo/não completo)
+  const toggleTask = async (id) => {
+    const taskRef = doc(db, `users/${user.uid}/tasks`, id);
+    const task = tasks.find((task) => task.id === id);
+    await updateDoc(taskRef, { completed: !task.completed });
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+  };
+
+  // Remover tarefa do Firestore
+  const removeTask = async (id) => {
+    const taskRef = doc(db, `users/${user.uid}/tasks`, id);
+    await deleteDoc(taskRef);
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  const clearAllTasks = () => {
-    setTasks([]); // Limpa todas as tarefas
-    localStorage.removeItem("tasks"); // Remove do Local Storage
-
-    // Exibir mensagem de aviso
-    setClearMessage("Todas as tarefas foram removidas!");
-    setTimeout(() => setClearMessage(""), 3000); // Ocultar mensagem após 3 segundos
-  };
-
-
+  // Filtrar tarefas por categoria
   const filteredTasks = tasks.filter((task) => {
     if (filterCategory === "Todas") return true;
     return task.category === filterCategory;
   });
 
+  // Atualiza as tarefas ao alterar o usuário
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
+    fetchTasks();
+  }, [user]);
+
+  if (!user) {
+    return <Auth onLogin={(user) => setUser(user)} />;
+  }
 
   return (
-    <div>
-      <div className={isDarkMode ? "dark-theme" : "light-theme"}>
-        <button className="theme-toggle" onClick={toggleTheme}>
-          {isDarkMode ? "🌞 Claro" : "🌙 Escuro"}
-        </button>
+    <div className={isDarkMode ? "dark-theme" : "light-theme"}>
+      <button className="theme-toggle" onClick={toggleTheme}>
+        {isDarkMode ? "🌞 Claro" : "🌙 Escuro"}
+      </button>
 
-        <h1>Gerenciador de Tarefas</h1>
-        <TaskInput onAddTask={addTask} />
-        <div>
-          <button onClick={() => setFilterCategory("Todas")}>Todas</button>
-          {[...new Set(tasks.map((task) => task.category))].map((category, index) => (
-            <button key={index} onClick={() => setFilterCategory(category)}>
-              {category}
-            </button>
-          ))}
-          <button onClick={clearAllTasks}>Limpar Todas as Tarefas
+      <h1>Gerenciador de Tarefas</h1>
+      <button onClick={() => auth.signOut().then(() => setUser(null))}>Logout</button>
+      
+      {/* Input e Lista de Tarefas */}
+      <TaskInput onAddTask={addTask} />
+      <div>
+        <button onClick={() => setFilterCategory("Todas")}>Todas</button>
+        {[...new Set(tasks.map((task) => task.category))].map((category, index) => (
+          <button key={index} onClick={() => setFilterCategory(category)}>
+            {category}
           </button>
-        </div>
-        <TaskList
-          tasks={filteredTasks}
-          onToggleTask={toggleTask}
-          onRemoveTask={removeTask}
-        />
+        ))}
       </div>
+      <TaskList
+        tasks={filteredTasks}
+        onToggleTask={toggleTask}
+        onRemoveTask={removeTask}
+      />
     </div>
   );
 }
