@@ -9,7 +9,7 @@ function TaskItem({ task, onToggleTask, onRemoveTask }) {
       >
         {task.text}
       </span>
-      <button onClick={() => onRemoveTask(task.id)}>Excluir</button>
+      <button onClick={() => onRemoveTask(task.id)}>Apagar</button>
     </li>
   );
 }
