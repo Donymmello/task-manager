@@ -9,7 +9,7 @@ import './App.css';
 function App() {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [filterCategory, setFilterCategory] = useState("Todas");
+  const [filter, setFilter] = useState("Todas");
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Recupera o tema do Local Storage ao carregar
     const savedTheme = localStorage.getItem("isDarkMode");
@@ -55,8 +55,10 @@ function App() {
 
   // Filtrar tarefas por categoria
   const filteredTasks = tasks.filter((task) => {
-    if (filterCategory === "Todas") return true;
-    return task.category === filterCategory;
+    if (filter === "Todas") return true;
+    if (filter === "Pendentes") return !task.completed;
+    if (filter === "Concluídas") return task.completed;
+    return task.category === filter;
   });
 
   // Atualiza as tarefas ao alterar o usuário
@@ -76,13 +78,15 @@ function App() {
 
       <h1>Gerenciador de Tarefas</h1>
       <button onClick={() => auth.signOut().then(() => setUser(null))}>Logout</button>
-      
+
       {/* Input e Lista de Tarefas */}
       <TaskInput onAddTask={addTask} />
       <div>
-        <button onClick={() => setFilterCategory("Todas")}>Todas</button>
+        <button onClick={() => setFilter("Todas")}>Todas</button>
+        <button onClick={() => setFilter("Pendentes")}>Pendentes</button>
+        <button onClick={() => setFilter("Concluídas")}>Concluídas</button>
         {[...new Set(tasks.map((task) => task.category))].map((category, index) => (
-          <button key={index} onClick={() => setFilterCategory(category)}>
+          <button key={index} onClick={() => setFilter(category)}>
             {category}
           </button>
         ))}
